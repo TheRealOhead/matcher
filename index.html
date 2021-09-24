@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" href="main.css">
+    </head>
+    <body>
+        <img src="logo.png" class="logo big-logo">
+        <a href="matching_game.html"><button>PLAY</button></a><br>
+        <div id="highscore" class="highscores">
+            
+        </div>
+        <script>
+            function formatTimer(num,doWarning) {
+                let done = '';
+                
+                done += Math.floor(num / 100 / 60); // Minutes
+                done += ':';
+                done += Math.floor((num / 100) % 60).toString().padStart(2,'0');
+                done += '.';
+                done += (num % 100).toString().padStart(2,'0');
+                
+                // Urgent red
+                if (num <= 800 && doWarning) {
+                    done = '<span class="urgent">' + done + '</span>'
+                };
+                
+                
+                return done;
+            };
+            
+            function getCookieData() {
+                let cookie = document.cookie;
+                let dataString = cookie.substr(cookie.indexOf('{'),cookie.lastIndexOf('}') + 1 - cookie.indexOf('{'));
+                let data = JSON.parse(dataString);
+                return data;
+            };
+            
+            if (!getCookieData().time) {
+                document.getElementById('highscore').innerHTML = 'No highscore yet!';
+            } else {
+                document.getElementById('highscore').innerHTML = getCookieData().name + ' got a highscore of ' + formatTimer(getCookieData().time);
+            };
+        </script>
+    </body>
+</html>

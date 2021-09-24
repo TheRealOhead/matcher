@@ -1,0 +1,446 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" href="main.css">
+    </head>
+    <body>
+        <a href="index.html"><img src="logo.png" class="logo"></a>
+        <div id="timer"></div>
+        <div id="results"></div>
+        <canvas width="800" height="600"></canvas>
+        
+        <script>
+            let selection = {x:0,y:0,render:false};
+            let clickCount = 0;
+            
+            function getCookieData() {
+                let cookie = document.cookie;
+                let dataString = cookie.substr(cookie.indexOf('{'),cookie.lastIndexOf('}') + 1 - cookie.indexOf('{'));
+                let data = JSON.parse(dataString);
+                return data;
+            };
+            
+            
+            function killPlus(x,y) {
+                board[y][x] = 'ff00ff';
+                
+                // Horizontal
+                    for (let i = 0; i < board[y].length; i++) {
+                        if (i != x) {
+                            board[y][i] = '#ff00ff';
+                        };
+                    };
+                    
+                    // Vertical
+                    for (let i = 0; i < board.length; i++) {
+                        if (i != y) {
+                            board[i][x] = '#ff00ff';
+                        };
+                    };
+            };
+            
+            function dropDown() {
+                i = 0;
+                while (checkForBlack() && i < 2**9) {
+                    let black = checkForBlack();
+                    i++;
+                    bringDownColumn(black[0],black[1]);
+                };
+                return checkedCoords.coords.length;
+            };
+            
+            
+            // Constantly get cursor pos
+            let cursor = {};
+            document.addEventListener('mousemove',(e)=>{
+                cursor.x = e.clientX;
+                cursor.y = e.clientY;
+            });
+            
+            
+            
+            
+            c = document.getElementsByTagName('canvas')[0];
+            ctx = c.getContext('2d');
+            let time = 0;
+            let lost = false;
+            let timer = 2000; // milliseconds / 10
+            function formatTimer(num,doWarning) {
+                let done = '';
+                
+                done += Math.floor(num / 100 / 60); // Minutes
+                done += ':';
+                done += Math.floor((num / 100) % 60).toString().padStart(2,'0');
+                done += '.';
+                done += (num % 100).toString().padStart(2,'0');
+                
+                // Urgent red
+                if (num <= 800 && doWarning) {
+                    done = '<span class="urgent">' + done + '</span>'
+                };
+                
+                
+                return done;
+            };
+            
+            
+            
+            let board = [];
+            let colors = ['red','yellow','green','blue','white'];
+            let extraColors = ['cyan','orange','purple','pink','#630','#bbb'];
+            function randColor() {
+                let c = colors[Math.floor(Math.random() * colors.length)];
+                if (clickCount > 30 && Math.random() < .008) {
+                    c = '#151515';
+                };
+                if (Math.random() < .003) {
+                    c = '+';
+                };
+                return c;
+            };
+            
+            
+            
+            function doImage(filename) {
+                let done = document.createElement('img');
+                done.src = filename;
+                done.onload = redraw;
+                return done;
+            };
+            
+            
+            
+            let tileImg = doImage('tile.png');
+            let selectionImg = doImage('selection.png');
+            let plusTileImg = doImage('plusTile.png');
+            
+            
+            
+            
+            function addTime(amount) {
+                timer += amount * 100;
+                
+                if (timer < 0) {
+                    timer = 0;
+                };
+                
+                // Make time particle
+                let p = document.createElement('div');
+                
+                
+                // Render at the cursor only if not using keyboard
+                if (!selection.render) {
+                    p.style.left = cursor.x + 'px';
+                    p.style.top = cursor.y + 'px';
+                } else {
+                    p.style.left = c.getBoundingClientRect().x + selection.x * 40 + 'px';
+                    p.style.top = c.getBoundingClientRect().y + selection.y * 40 + 'px';
+                };
+                
+                
+                p.style.opacity = '1';
+                p.classList = ['time-particle']
+                if (amount < 0) {
+                    p.classList = ['time-particle urgent'];
+                };
+                p.innerHTML = amount;
+                if (amount > 0) {
+                    p.innerHTML = '+' + p.innerHTML;
+                };
+                document.body.appendChild(p);
+            };
+            
+            function fillWithGray() {
+                let y = board.length;
+                
+                let interval = setInterval(()=>{
+                    y--;
+                    for (let i = 0; i < board[y].length; i++) {
+                        board[y][i] = '#151515';
+                    };
+                    redraw();
+                    if (y <= 0) {
+                        clearInterval(interval);
+                        
+                        // Check or highscore
+                        let highscore = false;
+                        if (!getCookieData().time || time > getCookieData().time) {
+                            highscore = true;
+                        };
+                        
+                        if (highscore) {
+                            document.cookie = 'data={"name":"' + prompt('New highscore! Enter a name:') + '","time":"' + time + '"}'
+                        };
+                        
+                        // When all is said and done, show the player the results
+                        let r = document.createElement('div');
+                        r.innerHTML = 'You lasted ' + formatTimer(time);
+                        r.classList = ['results-fade-in'];
+                        document.getElementById('results').appendChild(r);
+                        
+                        // Also make the game screen fall
+                        c.classList = 'fall-off';
+                        
+                        // And make the page unscrollable
+                        document.getElementsByTagName('html')[0].style.overflow = 'hidden';
+                    };
+                },120);
+            };
+            
+            function bringDownColumn(x,y) {
+                while (y > 0) {
+                    board[y][x] = board[y - 1][x];
+                    board[y - 1][x] = 'none';
+                    y--;
+                };
+                if (y == 0) {
+                    board[0][x] = randColor();
+                };
+            };
+            
+            function checkForBlack() {
+                let done = [];
+                board.forEach((y,yv)=>{
+                    if (y.includes('none')) {
+                        y.forEach((x,xv)=>{
+                            if (x == 'none') {
+                                done = [xv,yv];
+                            };
+                        });
+                    };
+                });
+                return done;
+            };
+            
+            // Fill board
+            function reset() {
+                for (let y = 0; y < 15; y++) {
+                    board[y] = [];
+                    for (let x = 0; x < 20; x++) {
+                        board[y][x] = randColor();
+                    };
+                };
+            };
+            reset();
+            
+            function drawSquare(x,y,color) {
+                // Color
+                if (color.charAt(0) == '+') {
+                    ctx.fillStyle = '#ff00ff';
+                } else {
+                    ctx.fillStyle = color;
+                };
+                ctx.fillRect(x * 40,y * 40,40,40);
+
+                // Cool indent or powerup graphic
+                if (color.charAt(0) == '+') {
+                    ctx.drawImage(plusTileImg,x * 40, y * 40);
+                } else {
+                    ctx.drawImage(tileImg,x * 40,y * 40);
+                };
+            };
+            
+            function redraw() {
+                
+                // Draw colored squares
+                board.forEach((subArray,y)=>{
+                    subArray.forEach((element,x)=>{
+                        let color = element;
+                        drawSquare(x,y,color);
+                    });
+                });
+                
+                // Draw keyboard selection
+                if (selection.render) {
+                    ctx.drawImage(selectionImg,selection.x * 40,selection.y * 40);
+                };
+            };
+            redraw();
+            function main() {
+                
+            };
+            
+            function checkCoord(x,y,color) {
+                if (board[y] && board[y][x]) {
+                    if (!checkedCoords.strings.includes(x+';'+y) && board[y][x] == color) {
+                        checkedCoords.strings.push(x+';'+y);
+                        checkedCoords.coords.push([x,y]);
+                        
+                        
+                                    checkCoord(x,y+1,color);
+                        
+                        
+                        checkCoord(x-1,y,color);  checkCoord(x+1,y,color);
+                        
+                        
+                                    checkCoord(x,y-1,color);
+                    
+                    
+                    };
+                };
+            };
+            
+            
+            
+            
+            
+            
+            
+            let checkedCoords = {};
+            checkedCoords.strings = [];
+            checkedCoords.coords = [];
+            function doClick(rawX,rawY) {
+                clickCount++;
+                
+                let pointOverride = false;                
+
+                // Add new color every 50 clicks
+                if (clickCount % 50 == 0 && extraColors.length > 0) {
+                    colors.push(extraColors.shift());
+                };
+                
+                let x = Math.floor(rawX / 40);
+                let y = Math.floor(rawY / 40);
+                
+                // Ignore if it's a hard block
+                if (board[y][x] == '#151515') {
+                    return;
+                };
+                
+                // Plus tile exception
+                if (board[y][x] == '+') {
+                    killPlus(x,y);
+                    
+                    pointOverride = -1;
+                };
+                
+                // Magenta yields no points
+                if (board[y][x] == '#ff00ff') {
+                    pointOverride = -1;
+                };
+                
+                // Make all adjacent colors none
+                checkedCoords.coords = [];
+                checkedCoords.strings = [];
+                checkCoord(x,y,board[y][x]);
+                checkedCoords.coords.forEach((value)=>{
+                    board[value[1]][value[0]] = 'none';
+                });
+                
+                // Kill hard blocks at the bottom
+                let a = board[board.length - 1];
+                for (let i = 0; i < a.length; i++) {
+                    if (a[i] == '#151515') {
+                        a[i] = 'none';
+                    };
+                };
+                
+                // Drop down columns with none
+                let comboAmount = dropDown();
+                
+                // Add time according to the amount in the combo or point override
+                if (!pointOverride) {
+                    addTime(comboAmount - 3);
+                } else {
+                    if (pointOverride != -1) {
+                        addTime(pointOverride);
+                    };
+                };
+                
+                redraw();
+            };
+            
+            
+            
+              //////////////////
+             // HANDLE CLICK //
+            //////////////////
+            c.addEventListener('click',(e)=>{
+                // Stop rendering keyboard control thingy
+                selection.render = false;
+                
+                if (!lost) { // Only allow interaction if the player hasn't lost
+                    doClick(e.layerX,e.layerY);
+                };
+            });
+            
+            
+            
+              ///////////////////////
+             // KEYBOARD CONTROLS //
+            ///////////////////////
+            document.addEventListener('keydown',(e)=>{
+                // Resume rendering keyboard control thingy
+                selection.render = true;
+                switch (e.key) {
+                    case 'w':
+                    case 'ArrowUp':
+                        selection.y--;
+                        break;
+                    case 's':
+                    case 'ArrowDown':
+                        selection.y++;
+                        break;
+                    case 'd':
+                    case 'ArrowRight':
+                        selection.x++;
+                        break;
+                    case 'a':
+                    case 'ArrowLeft':
+                        selection.x--;
+                        break;
+                    case 'Enter':
+                    case ' ':
+                        if (!lost) { // Only allow interaction if the player hasn't lost
+                            doClick(selection.x * 40,selection.y * 40);
+                        };
+                        break;
+                };
+                selection.x = (selection.x + board[0].length) % board[0].length;
+                selection.y = (selection.y + board.length) % board.length;
+                redraw();
+                
+            });
+            
+            
+            
+              /////////////////
+             // TIMER LOGIC //
+            /////////////////
+            let interval = setInterval(()=>{ // Update timer
+                timer--;
+                time++;
+                
+                if (timer <= 0) {
+                    timer = 0;
+                    clearInterval(interval);
+                    
+                    // Fill board with gray tiles
+                    lost = true;
+                    fillWithGray();
+                    redraw();
+                };
+                document.getElementById('timer').innerHTML = formatTimer(timer,true);
+            },10);
+            
+            
+              ////////////////////
+             // PARTICLE LOGIC //
+            ////////////////////
+            setInterval(()=>{
+                // Go over all the time particles
+                let particles = document.getElementsByClassName('time-particle');
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+
+                    p.style.top = (parseInt(p.style.top.substr(0,p.style.top.indexOf('px'))) - 1) + 'px'
+                    p.style.opacity -= .01;
+                    
+                    if (parseFloat(p.style.opacity) <= 0) {
+                        p.remove();
+                    };
+                };
+            },10);
+        </script>
+    </body>
+</html>

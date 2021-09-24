@@ -1,0 +1,149 @@
+html {
+    background-color:#333;
+    font-family:monospace;
+    color:white;
+}
+
+canvas {
+    border:1px solid black;
+    
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+.logo {
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    width:180px;
+    
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+    -moz-user-select: none;     /* Firefox all */
+    -ms-user-select: none;      /* IE 10+ */
+    user-select: none;          /* Likely future */ 
+}
+
+.big-logo {
+    width:500px;
+    margin-top:30px;
+}
+
+button {
+    font-size:30pt;
+    background-image:linear-gradient(to right,#9f78e7,#f50062);
+    border:none;
+    margin:auto;
+    display:block;
+    border-radius:5px;
+    color:inherit;
+}
+
+.highscores {
+    width:500px;
+    border:1px solid white;
+    margin:auto;
+    
+}
+
+a {
+    color: inherit;
+    text-decoration: inherit;
+}
+
+#timer {
+    margin:auto;
+    font-size:32pt;
+    
+    text-align:center;
+    
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+    -moz-user-select: none;     /* Firefox all */
+    -ms-user-select: none;      /* IE 10+ */
+    user-select: none;          /* Likely future */ 
+}
+
+.urgent {
+    color:red !important;
+}
+
+@keyframes fade-in {
+    from {
+        opacity:0;
+    }
+    to {
+        opacity:1;
+    }
+}
+
+
+@keyframes fall {
+    0% {
+        transform: rotate(0deg);
+        top:0px;
+    }
+    50% {
+        transform:rotate(53.8deg);
+        top:0px;
+    }
+    100% {
+        transform:rotate(53.8deg);
+        top:2000px;
+    }
+}
+
+.fall-off {
+    position:relative;
+    left:0px;
+    top:2000px;
+    
+    transform-origin: left top;
+    
+    animation-name: fall;
+    animation-duration: 3s;
+}
+
+
+.results {
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+
+    text-align:center;
+}
+
+.results-fade-in {
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+
+    text-align:center;
+
+    font-size:28pt;
+    opacity:1;
+    animation-name: fade-in;
+    animation-duration: 3s;
+}
+
+.time-particle {
+    position:fixed;
+    opacity:1;
+    color:black;
+    font-size:20pt;
+    z-index:99999;
+    
+    pointer-events:none;
+    
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+    -moz-user-select: none;     /* Firefox all */
+    -ms-user-select: none;      /* IE 10+ */
+    user-select: none;          /* Likely future */ 
+}
