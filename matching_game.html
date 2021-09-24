@@ -164,7 +164,7 @@
                         
                         // Check or highscore
                         let highscore = false;
-                        if (document.cookie.indexOf('data') != -1) {
+                        if (document.cookie.indexOf('data') == -1 || time > getCookieData().time) {
                             highscore = true;
                         };
                         
