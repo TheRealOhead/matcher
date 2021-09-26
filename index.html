@@ -7,7 +7,7 @@
         <img src="logo.png" class="logo big-logo">
         <a href="matching_game.html"><button>PLAY</button></a><br>
         <div id="highscore" class="highscores">
-            
+            No highscores yet!
         </div>
         <script>
             function formatTimer(num,doWarning) {
@@ -35,9 +35,7 @@
                 return data;
             };
             
-            if (!getCookieData().time) {
-                document.getElementById('highscore').innerHTML = 'No highscore yet!';
-            } else {
+            if (getCookieData().time) {
                 document.getElementById('highscore').innerHTML = getCookieData().name + ' got a highscore of ' + formatTimer(getCookieData().time);
             };
         </script>

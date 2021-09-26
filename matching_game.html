@@ -94,6 +94,9 @@
                     c = '#151515';
                 };
                 if (Math.random() < .003) {
+                    c = '&';
+                };
+                if (Math.random() < .003) {
                     c = '+';
                 };
                 return c;
@@ -113,7 +116,7 @@
             let tileImg = doImage('tile.png');
             let selectionImg = doImage('selection.png');
             let plusTileImg = doImage('plusTile.png');
-            
+            let shuffleTileImg = doImage('tileShuffle.png');
             
             
             
@@ -225,7 +228,7 @@
             
             function drawSquare(x,y,color) {
                 // Color
-                if (color.charAt(0) == '+') {
+                if (color.charAt(0) == '+' || color.charAt(0) == '&') {
                     ctx.fillStyle = '#ff00ff';
                 } else {
                     ctx.fillStyle = color;
@@ -235,6 +238,8 @@
                 // Cool indent or powerup graphic
                 if (color.charAt(0) == '+') {
                     ctx.drawImage(plusTileImg,x * 40, y * 40);
+                } else if (color.charAt(0) == '&') {
+                    ctx.drawImage(shuffleTileImg,x * 40, y * 40);
                 } else {
                     ctx.drawImage(tileImg,x * 40,y * 40);
                 };
@@ -280,7 +285,33 @@
                 };
             };
             
-            
+            // Shuffles some tiles
+            function shuffle() {
+                let counter = 0;
+                let interval = setInterval(()=>{
+
+                    // Find 2 tiles and swap them
+                    let a = {
+                        x:Math.floor(Math.random() * 20),
+                        y:Math.floor(Math.random() * 15)
+                    };
+                    let b = {
+                        x:Math.floor(Math.random() * 20),
+                        y:Math.floor(Math.random() * 15)
+                    }
+
+                    let temp = board[a.y][a.x];
+                    board[a.x][a.y] = board[b.y][b.x];
+                    board[a.y][a.x] = temp;
+                    redraw();
+
+                    // Stop after 80 swaps
+                    counter++;
+                    if (counter > 80) {
+                        clearInterval(interval);
+                    };
+                },10)
+            };
             
             
             
@@ -313,6 +344,13 @@
                     
                     pointOverride = -1;
                 };
+
+                // Shuffle tile exception
+                if (board[y][x] == '&') {
+                    shuffle();
+                    
+                    pointOverride = 5;
+                };                
                 
                 // Magenta yields no points
                 if (board[y][x] == '#ff00ff') {
