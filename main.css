@@ -48,7 +48,6 @@ button {
     border:1px solid white;
     margin:auto;
     
-    font-size:28pt;
 }
 
 a {
@@ -140,6 +139,21 @@ a {
     color:black;
     font-size:20pt;
     z-index:99999;
+    
+    pointer-events:none;
+    
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+    -moz-user-select: none;     /* Firefox all */
+    -ms-user-select: none;      /* IE 10+ */
+    user-select: none;          /* Likely future */ 
+}
+
+.block-particle {
+    position:fixed;
+    opacity:1;
+    width:8px;
+    height:8px;
+    background-color:#ff00ff;
     
     pointer-events:none;
     

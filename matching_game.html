@@ -13,6 +13,20 @@
             let selection = {x:0,y:0,render:false};
             let clickCount = 0;
             
+            function screenShake(amount) {
+                document.getElementsByTagName('html')[0].style.position = 'absolute';
+                
+                let interval = setInterval(()=>{
+                    document.getElementsByTagName('html')[0].style.left = (Math.random() * amount) + 'px';
+                    document.getElementsByTagName('html')[0].style.top  = (Math.random() * amount) + 'px';
+                    amount--;
+                    if (amount <= 0) {
+                        document.getElementsByTagName('html')[0].style.position = 'static';
+                        clearInterval(interval);
+                    };
+                },10)
+            };
+            
             function getCookieData() {
                 let cookie = document.cookie;
                 let dataString = cookie.substr(cookie.indexOf('{'),cookie.lastIndexOf('}') + 1 - cookie.indexOf('{'));
@@ -21,7 +35,28 @@
             };
             
             
-            function killPlus(x,y) {
+            function blockParticle(x,y,color) {
+                let p = document.createElement('div');
+                p.classList = ['block-particle'];
+                
+                p.style.backgroundColor = color;
+                
+                p.style.left = (c.getBoundingClientRect().x + (x*40 + 20)) + 'px';
+                p.style.top  = (c.getBoundingClientRect().y + (y*40 + 20)) + 'px';
+                
+                p.vx = Math.random() * 6 - 3;
+                p.vy = Math.random() * 6 - 3;
+                
+                p.style.opacity = 1;
+                
+                document.body.appendChild(p);
+                
+                return p;
+            };
+            
+            
+            // Old function
+            /*function killPlus(x,y) {
                 board[y][x] = 'ff00ff';
                 
                 // Horizontal
@@ -37,6 +72,45 @@
                             board[i][x] = '#ff00ff';
                         };
                     };
+            };*/
+            
+            function killPlus(x,y) {
+                let n = y;
+                let nI = setInterval(()=>{
+                    board[n][x] = '#ff00ff';
+                    redraw();
+                    n--;
+                    if (n < 0) {
+                        clearInterval(nI);
+                    };
+                },20);
+                let e = x;
+                let eI = setInterval(()=>{
+                    board[y][e] = '#ff00ff';
+                    redraw();
+                    e++;
+                    if (e >= 20) {
+                        clearInterval(eI);
+                    };
+                },20);
+                let s = y;
+                let sI = setInterval(()=>{
+                    board[s][x] = '#ff00ff';
+                    redraw();
+                    s++;
+                    if (s >= 15) {
+                        clearInterval(sI);
+                    };
+                },20);
+                let w = x;
+                let wI = setInterval(()=>{
+                    board[y][w] = '#ff00ff';
+                    redraw();
+                    w--;
+                    if (w < 0) {
+                        clearInterval(wI);
+                    };
+                },20);
             };
             
             function dropDown() {
@@ -94,9 +168,6 @@
                     c = '#151515';
                 };
                 if (Math.random() < .003) {
-                    c = '&';
-                };
-                if (Math.random() < .003) {
                     c = '+';
                 };
                 return c;
@@ -116,7 +187,7 @@
             let tileImg = doImage('tile.png');
             let selectionImg = doImage('selection.png');
             let plusTileImg = doImage('plusTile.png');
-            let shuffleTileImg = doImage('tileShuffle.png');
+            
             
             
             
@@ -228,7 +299,7 @@
             
             function drawSquare(x,y,color) {
                 // Color
-                if (color.charAt(0) == '+' || color.charAt(0) == '&') {
+                if (color.charAt(0) == '+') {
                     ctx.fillStyle = '#ff00ff';
                 } else {
                     ctx.fillStyle = color;
@@ -238,8 +309,6 @@
                 // Cool indent or powerup graphic
                 if (color.charAt(0) == '+') {
                     ctx.drawImage(plusTileImg,x * 40, y * 40);
-                } else if (color.charAt(0) == '&') {
-                    ctx.drawImage(shuffleTileImg,x * 40, y * 40);
                 } else {
                     ctx.drawImage(tileImg,x * 40,y * 40);
                 };
@@ -285,33 +354,7 @@
                 };
             };
             
-            // Shuffles some tiles
-            function shuffle() {
-                let counter = 0;
-                let interval = setInterval(()=>{
-
-                    // Find 2 tiles and swap them
-                    let a = {
-                        x:Math.floor(Math.random() * 20),
-                        y:Math.floor(Math.random() * 15)
-                    };
-                    let b = {
-                        x:Math.floor(Math.random() * 20),
-                        y:Math.floor(Math.random() * 15)
-                    }
-
-                    let temp = board[a.y][a.x];
-                    board[a.x][a.y] = board[b.y][b.x];
-                    board[a.y][a.x] = temp;
-                    redraw();
-
-                    // Stop after 80 swaps
-                    counter++;
-                    if (counter > 80) {
-                        clearInterval(interval);
-                    };
-                },10)
-            };
+            
             
             
             
@@ -333,6 +376,9 @@
                 let x = Math.floor(rawX / 40);
                 let y = Math.floor(rawY / 40);
                 
+                let color = board[y][x];
+                
+                
                 // Ignore if it's a hard block
                 if (board[y][x] == '#151515') {
                     return;
@@ -342,15 +388,8 @@
                 if (board[y][x] == '+') {
                     killPlus(x,y);
                     
-                    pointOverride = -1;
-                };
-
-                // Shuffle tile exception
-                if (board[y][x] == '&') {
-                    shuffle();
-                    
                     pointOverride = 5;
-                };                
+                };
                 
                 // Magenta yields no points
                 if (board[y][x] == '#ff00ff') {
@@ -363,6 +402,11 @@
                 checkCoord(x,y,board[y][x]);
                 checkedCoords.coords.forEach((value)=>{
                     board[value[1]][value[0]] = 'none';
+                    
+                    // Make block particles at the position +20 to make it in the center of the tile
+                    for (let i = 0; i < 3; i++) {
+                        blockParticle(value[0],value[1],color);
+                    };
                 });
                 
                 // Kill hard blocks at the bottom
@@ -478,7 +522,37 @@
                         p.remove();
                     };
                 };
+                
+                // Go over all the block particles
+                particles = document.getElementsByClassName('block-particle');
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+
+                    
+                    p.style.left = (parseInt(p.style.left.substr(0,p.style.left.indexOf('px'))) + parseFloat(p.vx)) + 'px';
+                    p.style.top  = (parseInt( p.style.top.substr(0, p.style.top.indexOf('px'))) + parseFloat(p.vy)) + 'px';
+                    p.vy += .3;
+                    p.style.opacity -= .02;
+                    
+                    if (parseFloat(p.style.opacity) <= 0) {
+                        p.remove();
+                    };
+                };
             },10);
+            
+            
+            
+            
+            
+            
+            
+            function fillWith(color) {
+                board.forEach((b,i)=>{
+                    b.forEach((a,j)=>{
+                        board[i][j] = color;
+                    });
+                });
+            };
         </script>
     </body>
 </html>
